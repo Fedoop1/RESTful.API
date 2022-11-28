@@ -46,9 +46,7 @@ namespace RESTful.API.Controllers
         {
             var entity = details.ToEntity();
 
-            var category = await context.Categories.FindAsync(details.CategoryId);
-
-            if (category is null)
+            if (!await IsCategoryExistAsync(details.CategoryId))
             {
                 var error = new {categoryId = $"Category list with id {details.CategoryId} doesn't exist"};
 
@@ -64,7 +62,12 @@ namespace RESTful.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var entity = new ItemEntity { Id = id };
+            var entity = await this.context.Items.FindAsync(id);
+
+            if (entity is null)
+            {
+                return NotFound();
+            }
 
             this.context.Items.Remove(entity);
 
@@ -80,13 +83,32 @@ namespace RESTful.API.Controllers
             var entity = details.ToEntity();
             entity.Id = id;
 
-            var isCreate = this.context.Categories.FirstOrDefault(c => c.Id == id) is not null;
+            if (this.context.Items.FirstOrDefault(c => c.Id == id) is null)
+            {
+                var error = new { id = $"Item with id {id} doesn't exist" };
+
+                return BadRequest(error);
+            }
+
+            if (!await IsCategoryExistAsync(details.CategoryId))
+            {
+                var error = new { categoryId = $"Category list with id {details.CategoryId} doesn't exist" };
+
+                return BadRequest(error);
+            }
 
             this.context.Items.Update(entity);
 
             await this.context.SaveChangesAsync();
 
-            return isCreate ? Created($"{HttpContext.Request.GetDisplayUrl()}/{id}", entity.ToModel()) : Ok();
+            return Ok();
+        }
+
+        private async Task<bool> IsCategoryExistAsync(int categoryId)
+        {
+            var category = await context.Categories.FindAsync(categoryId);
+
+            return category is not null;
         }
     }
 }

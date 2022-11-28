@@ -58,7 +58,7 @@ namespace RESTful.API.Controllers
                 .Include(c => c.Items)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-            if (entity is null) return NoContent();
+            if (entity is null) return NotFound();
 
             this.context.Categories.Remove(entity);
 
@@ -73,13 +73,17 @@ namespace RESTful.API.Controllers
             var entity = details.ToEntity();
             entity.Id = id;
 
-            var isCreate = this.context.Categories.FirstOrDefault(c => c.Id == id) is not null;
+            if (this.context.Categories.FirstOrDefault(c => c.Id == id) is null)
+            {
+                var error = new {id = $"Category with id {id} doesn't exist"};
+                return BadRequest(error);
+            }
 
             this.context.Categories.Update(entity);
 
             await this.context.SaveChangesAsync();
 
-            return isCreate ? Created($"{HttpContext.Request.GetDisplayUrl()}/{id}", entity.ToModel()) : Ok();
+            return Ok();
         }
     }
 }

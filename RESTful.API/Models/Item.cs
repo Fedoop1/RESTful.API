@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace RESTful.API.Models;
+﻿namespace RESTful.API.Models;
 
 public sealed class Item
 {
